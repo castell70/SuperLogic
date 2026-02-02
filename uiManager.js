@@ -1,0 +1,524 @@
+import { RouteCalculator } from './routeCalculator.js'; // Import RouteCalculator here to use it for fuel calculation
+export class UIManager {
+    constructor(dataStore, mapManager, appConstants) {
+        this.dataStore = dataStore;
+        this.mapManager = mapManager; // mapManager might be null initially, set by setter
+        this.toast = new bootstrap.Toast(document.getElementById('notificationToast'));
+        this.confirmationModal = new bootstrap.Modal(document.getElementById('confirmationModal'));
+        this.COSTO_KM = appConstants.COSTO_KM;
+        this.AVERAGE_SPEED_KMH = appConstants.AVERAGE_SPEED_KMH;
+        this.routeCalculator = new RouteCalculator(); // Initialize RouteCalculator
+    }
+
+    setMapManager(mapManager) {
+        this.mapManager = mapManager;
+    }
+
+    showSection(sectionId) {
+        document.querySelectorAll('.nav-link').forEach(link => {
+            link.classList.remove('active');
+        });
+        document.querySelector(`.nav-link[data-section="${sectionId}"]`).classList.add('active');
+
+        document.querySelectorAll('.section').forEach(section => {
+            section.style.display = 'none';
+        });
+        document.getElementById(sectionId).style.display = 'block';
+        
+        if(sectionId === 'rutas') {
+            this.mapManager.initializeMap();
+        }
+    }
+
+    showConfirmation(message, onConfirm, title = "Confirmación Requerida") {
+        const messageEl = document.getElementById('confirmationModalMessage');
+        const titleEl = document.getElementById('confirmationModalLabel');
+        const confirmBtn = document.getElementById('confirmActionBtn');
+
+        messageEl.innerHTML = message;
+        titleEl.innerHTML = `<i class="fas fa-exclamation-triangle me-2"></i> ${title}`;
+
+        // Remove old listeners to avoid multiple executions
+        const newConfirmBtn = confirmBtn.cloneNode(true);
+        confirmBtn.parentNode.replaceChild(newConfirmBtn, confirmBtn);
+
+        newConfirmBtn.addEventListener('click', () => {
+            onConfirm();
+            this.confirmationModal.hide();
+        });
+
+        this.confirmationModal.show();
+    }
+
+    showNotification(message, isError = false) {
+        const toastEl = document.getElementById('notificationToast');
+        const titleEl = document.getElementById('toastTitle');
+        const messageEl = document.getElementById('toastMessage');
+        const iconEl = toastEl.querySelector('.fas');
+
+        toastEl.classList.remove('bg-danger', 'text-white', 'bg-success');
+        if (isError) {
+            toastEl.classList.add('bg-danger', 'text-white');
+            titleEl.textContent = 'Error';
+            iconEl.className = 'fas fa-exclamation-circle me-2';
+        } else {
+            toastEl.classList.add('bg-success', 'text-white');
+            titleEl.textContent = 'Éxito';
+            iconEl.className = 'fas fa-check-circle me-2';
+        }
+
+        messageEl.textContent = message;
+        this.toast.show();
+    }
+
+    updateDashboard() {
+        document.getElementById('totalCamiones').textContent = this.dataStore.getAll('camiones').length;
+        document.getElementById('totalSucursales').textContent = this.dataStore.getAll('sucursales').length;
+        document.getElementById('totalChoferes').textContent = this.dataStore.getAll('choferes').length;
+        document.getElementById('totalRutasValidadas').textContent = this.dataStore.getAll('validatedRoutes').length;
+        // Updated to count both 'Pendiente' and 'En Proceso' as pending for the dashboard
+        document.getElementById('totalPedidosPendientes').textContent = this.dataStore.getAll('pedidos').filter(p => p.estado === 'Pendiente' || p.estado === 'En Proceso').length;
+    }
+
+    updateTable(type, onSaveCallback, onDeleteCallback, onDispatchCallback = null) {
+        const tbody = document.querySelector(`#${type}Table tbody`);
+        if (!tbody) return;
+        tbody.innerHTML = '';
+        
+        this.dataStore.getAll(type).forEach((item, index) => {
+            const tr = document.createElement('tr');
+            
+            switch(type) {
+                case 'camiones':
+                    tr.innerHTML = `
+                        <td><input type="text" class="form-control form-control-sm" value="${item.placa}" data-field="placa" data-original="${item.placa}"></td>
+                        <td><input type="text" class="form-control form-control-sm" value="${item.marca}" data-field="marca" data-original="${item.marca}"></td>
+                        <td><input type="number" class="form-control form-control-sm" value="${item.anioCompra}" data-field="anioCompra" data-original="${item.anioCompra}"></td>
+                        <td><input type="number" class="form-control form-control-sm w-50 d-inline-block" value="${item.capacidad}" data-field="capacidad" data-original="${item.capacidad}"> Ton</td>
+                        <td><input type="number" class="form-control form-control-sm w-50 d-inline-block" value="${item.capacidadTanque}" data-field="capacidadTanque" data-original="${item.capacidadTanque}"> gal</td>
+                        <td>$<input type="number" step="0.01" class="form-control form-control-sm d-inline-block w-50" value="${item.costoCombustible}" data-field="costoCombustible" data-original="${item.costoCombustible}">/gal</td>
+                        <td><input type="number" step="0.1" class="form-control form-control-sm w-50 d-inline-block" value="${item.kmPorGalon}" data-field="kmPorGalon" data-original="${item.kmPorGalon}"> km/gal</td>
+                        <td>
+                            <button class="btn btn-sm btn-success me-2 btn-save" style="display:none;" data-type="camiones" data-index="${index}">
+                                <i class="fas fa-save"></i>
+                            </button>
+                            <button class="btn btn-sm btn-secondary me-2 btn-cancel" style="display:none;" data-type="camiones" data-index="${index}">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" data-type="camiones" data-action="delete" data-index="${index}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    break;
+                case 'sucursales':
+                    tr.innerHTML = `
+                        <td><input type="text" class="form-control form-control-sm" value="${item.nombre}" data-field="nombre" data-original="${item.nombre}"></td>
+                        <td><input type="number" step="any" class="form-control form-control-sm" value="${item.latitud}" data-field="latitud" data-original="${item.latitud}"></td>
+                        <td><input type="number" step="any" class="form-control form-control-sm" value="${item.longitud}" data-field="longitud" data-original="${item.longitud}"></td>
+                        <td><input type="number" class="form-control form-control-sm w-50 d-inline-block" value="${item.demanda}" data-field="demanda" data-original="${item.demanda}"> Ton</td>
+                        <td>
+                            <button class="btn btn-sm btn-success me-2 btn-save" style="display:none;" data-type="sucursales" data-index="${index}">
+                                <i class="fas fa-save"></i>
+                            </button>
+                            <button class="btn btn-sm btn-secondary me-2 btn-cancel" style="display:none;" data-type="sucursales" data-index="${index}">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" data-type="sucursales" data-action="delete" data-index="${index}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    break;
+                case 'choferes':
+                    tr.innerHTML = `
+                        <td><input type="text" class="form-control form-control-sm" value="${item.nombre}" data-field="nombre" data-original="${item.nombre}"></td>
+                        <td><input type="text" class="form-control form-control-sm" value="${item.licencia}" data-field="licencia" data-original="${item.licencia}"></td>
+                        <td><input type="text" class="form-control form-control-sm" value="${item.telefono}" data-field="telefono" data-original="${item.telefono}"></td>
+                        <td>
+                            <button class="btn btn-sm btn-success me-2 btn-save" style="display:none;" data-type="choferes" data-index="${index}">
+                                <i class="fas fa-save"></i>
+                            </button>
+                            <button class="btn btn-sm btn-secondary me-2 btn-cancel" style="display:none;" data-type="choferes" data-index="${index}">
+                                <i class="fas fa-times"></i>
+                            </button>
+                            <button class="btn btn-sm btn-danger" data-type="choferes" data-action="delete" data-index="${index}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    break;
+                case 'pedidos':
+                    let statusClass = '';
+                    switch(item.estado) {
+                        case 'Pendiente':
+                            statusClass = 'bg-warning text-dark';
+                            break;
+                        case 'En Proceso':
+                            statusClass = 'bg-info text-white';
+                            break;
+                        case 'Despachado':
+                            statusClass = 'bg-success';
+                            break;
+                        default:
+                            statusClass = 'bg-secondary';
+                    }
+
+                    tr.innerHTML = `
+                        <td>${item.sucursal.nombre}</td>
+                        <td>${item.cantidad}</td>
+                        <td>${item.fechaEnvio}</td>
+                        <td>${item.fechaDespacho || 'N/A'}</td>
+                        <td><span class="badge ${statusClass}">${item.estado}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-danger me-2" data-type="pedidos" data-action="delete" data-index="${index}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            ${item.estado === 'En Proceso' ? 
+                                `<button class="btn btn-sm btn-primary" data-type="pedidos" data-action="dispatch" data-index="${index}">
+                                    <i class="fas fa-check-circle"></i> Despachado
+                                </button>` : ''}
+                        </td>
+                    `;
+                    break;
+                case 'validatedRoutes':
+                    tr.innerHTML = `
+                        <td>${item.camion.placa}</td>
+                        <td>${item.sucursales[0].nombre}</td>
+                        <td>${item.distanciaTotal ? item.distanciaTotal.toFixed(2) : 'N/A'}</td>
+                        <td>${item.cargaTotal ? item.cargaTotal.toFixed(2) : 'N/A'}</td>
+                        <td>${item.costoCombustible ? item.costoCombustible.toFixed(2) : 'N/A'}</td>
+                        <td>${item.costoTotal ? item.costoTotal.toFixed(2) : 'N/A'}</td>
+                        <td>${item.fechaValidacion || 'N/A'}</td>
+                        <td><span class="badge bg-success">${item.status}</span></td>
+                        <td>
+                            <button class="btn btn-sm btn-danger" data-type="validatedRoutes" data-action="delete" data-index="${index}">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                        </td>
+                    `;
+                    break;
+            }
+            tbody.appendChild(tr);
+
+            if (type === 'camiones' || type === 'sucursales' || type === 'choferes') {
+                const row = tbody.lastElementChild;
+                const inputs = row.querySelectorAll('input');
+                const saveBtn = row.querySelector('.btn-save');
+                const cancelBtn = row.querySelector('.btn-cancel');
+
+                inputs.forEach(input => {
+                    input.addEventListener('input', () => {
+                        const hasChanges = Array.from(inputs).some(inp => 
+                            inp.value !== inp.dataset.original
+                        );
+                        saveBtn.style.display = hasChanges ? 'inline-block' : 'none';
+                        cancelBtn.style.display = hasChanges ? 'inline-block' : 'none';
+                    });
+                });
+
+                saveBtn.addEventListener('click', () => {
+                    const updatedData = {};
+                    inputs.forEach(input => {
+                        if (input.type === 'number') {
+                            updatedData[input.dataset.field] = parseFloat(input.value);
+                        } else {
+                            updatedData[input.dataset.field] = input.value;
+                        }
+                    });
+                    onSaveCallback(type, index, updatedData);
+                    // Re-render the table to show updated data and reset buttons
+                    this.updateTable(type, onSaveCallback, onDeleteCallback, onDispatchCallback);
+                });
+
+                cancelBtn.addEventListener('click', () => {
+                    inputs.forEach(input => {
+                        input.value = input.dataset.original;
+                    });
+                    saveBtn.style.display = 'none';
+                    cancelBtn.style.display = 'none';
+                });
+            }
+
+            // Attach listeners for delete and dispatch buttons if they exist
+            tr.querySelectorAll('.btn-danger[data-action="delete"]').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const index = parseInt(e.currentTarget.dataset.index);
+                    onDeleteCallback(type, index);
+                });
+            });
+            
+            tr.querySelectorAll('.btn-primary[data-action="dispatch"]').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const index = parseInt(e.currentTarget.dataset.index);
+                    if (onDispatchCallback) {
+                        onDispatchCallback(index);
+                    }
+                });
+            });
+        });
+        this.updateDashboard();
+    }
+
+    displayOptimalRouteInfo(routes) {
+        const container = document.getElementById('rutasCalculadas');
+        container.innerHTML = '';
+
+        if (routes.length === 0) {
+            container.innerHTML = '<p>No se pudieron calcular rutas óptimas con los datos actuales.</p>';
+            return;
+        }
+
+        routes.forEach((route, index) => {
+            const div = document.createElement('div');
+            div.className = 'route-info mb-3';
+            
+            let content = `
+                <h4>Ruta Optima ${index + 1}</h4>
+                <p>Camión: ${route.camion.placa}</p>
+                <p>Distancia total: ${route.distanciaTotal.toFixed(2)} km</p>
+                <p>Carga total: ${route.cargaTotal.toFixed(2)} Ton</p>
+                <p>Sucursales: ${route.sucursales.map(s => s.nombre).join(' → ')}</p>
+            `;
+
+            if(route.requiereCombustible) {
+                content += `<p class="route-warning">⚠️ Esta ruta requiere reabastecimiento de combustible</p>`;
+            }
+
+            div.innerHTML = content;
+            container.appendChild(div);
+        });
+    }
+
+    updatePedidoSucursalSelector(sucursales) {
+        const selectSucursalPedido = document.getElementById('selectSucursalPedido');
+        
+        selectSucursalPedido.innerHTML = '<option value="">Seleccione una sucursal</option>';
+        sucursales.forEach(sucursal => {
+            selectSucursalPedido.innerHTML += `<option value="${sucursal.nombre}">${sucursal.nombre}</option>`;
+        });
+    }
+
+    updateSelectors(camiones, pendingPedidos) {
+        const selectCamion = document.getElementById('selectCamion');
+        const selectPedidoRuta = document.getElementById('selectPedidoRuta');
+        
+        selectCamion.innerHTML = '<option value="">Seleccione un camión</option>';
+        // Keep the placeholder option, preserve multi-select behavior
+        selectPedidoRuta.innerHTML = '<option value="">Seleccione uno o más pedidos</option>';
+        
+        camiones.forEach(camion => {
+            selectCamion.innerHTML += `<option value="${camion.placa}">${camion.placa} - ${camion.marca} (${camion.capacidad} Ton)</option>`;
+        });
+        
+        // Populate the pedido selector with only 'Pendiente' orders (allow selecting multiple)
+        const filteredPedidos = pendingPedidos.filter(p => p.estado === 'Pendiente');
+        filteredPedidos.forEach((pedido) => {
+            const originalIndex = this.dataStore.getAll('pedidos').findIndex(p => p === pedido);
+            selectPedidoRuta.innerHTML += `<option value="${originalIndex}">${pedido.sucursal.nombre} (${pedido.cantidad} Ton) - ${pedido.fechaEnvio} [${pedido.estado}]</option>`;
+        });
+    }
+
+    // New method to calculate and set fuel in the input field
+    calculateAndSetFuel(selectedPedidoIndex, selectedCamionPlaca) {
+        const cantidadCombustibleInput = document.getElementById('cantidadCombustible');
+        // If multi-select, selectedPedidoIndex might be an empty string or single string; fetch selected options
+        const selectPedido = document.getElementById('selectPedidoRuta');
+        const selectedOptions = Array.from(selectPedido ? selectPedido.selectedOptions : []).map(o => o.value).filter(v => v !== '');
+
+        if (selectedOptions.length === 0 || selectedCamionPlaca === '') {
+            cantidadCombustibleInput.value = '';
+            return;
+        }
+
+        const camion = this.dataStore.getAll('camiones').find(c => c.placa === selectedCamionPlaca);
+        if (!camion || camion.kmPorGalon <= 0) {
+            cantidadCombustibleInput.value = '';
+            return;
+        }
+
+        // Build sucursales array and total carga
+        const pedidos = selectedOptions.map(idx => this.dataStore.getAll('pedidos')[idx]).filter(Boolean);
+        if (pedidos.length === 0) {
+            cantidadCombustibleInput.value = '';
+            return;
+        }
+
+        const sucursales = pedidos.map(p => p.sucursal);
+        const totalCarga = pedidos.reduce((s, p) => s + parseFloat(p.cantidad), 0);
+
+        // Use the new multi-stop calculator when multiple pedidos are selected
+        let tempRoute;
+        if (sucursales.length > 1) {
+            tempRoute = this.routeCalculator.calculateMultiStopRoute(sucursales, camion, totalCarga);
+        } else {
+            tempRoute = this.routeCalculator.calculateSingleRouteWithCosts(sucursales[0], camion, pedidos[0].cantidad);
+        }
+
+        let combustibleNecesario = tempRoute.distanciaTotal / parseFloat(camion.kmPorGalon);
+        combustibleNecesario = Math.ceil(combustibleNecesario * 1.10); // Add 10% and round up
+        cantidadCombustibleInput.value = combustibleNecesario.toFixed(0); // Display as integer
+    }
+
+    displaySingleRouteInfo(route, allCamiones, selectedPedidos, currentFuel, onRecalculateCallback) {
+        const container = document.getElementById('rutaDetalles');
+        
+        // route may represent multiple pedidos; selectedPedidos can be an array
+        const combustibleNecesario = route.combustibleNecesario; 
+        const combustibleDisponible = currentFuel;
+        const costoCombustible = combustibleNecesario * parseFloat(route.camion.costoCombustible);
+        const costoFleteOperativo = route.distanciaTotal * this.COSTO_KM;
+        const costoTotal = costoFleteOperativo + costoCombustible;
+        const tiempoEstimadoHoras = route.distanciaTotal / this.AVERAGE_SPEED_KMH;
+        const tiempoEstimado = `${Math.floor(tiempoEstimadoHoras)}h ${Math.round((tiempoEstimadoHoras % 1) * 60)}min`;
+
+        route.costoCombustible = costoCombustible;
+        route.costoTotal = costoTotal;
+        route.combustibleNecesarioDisplay = combustibleNecesario;
+        route.combustibleDisponible = combustibleDisponible;
+        route.tiempoEstimado = tiempoEstimado;
+
+        let camionesOptions = '';
+        let bestCamion = null;
+        let minCost = Infinity;
+
+        allCamiones.forEach(c => {
+            const isSelected = c.placa === route.camion.placa ? 'selected' : '';
+            // For multi-stop/aggregate cost comparison, use calculateMultiStopRoute if multiple pedidos
+            let tempRouteForCalc;
+            if (Array.isArray(selectedPedidos)) {
+                const sucursales = selectedPedidos.map(p => p.sucursal);
+                const totalCarga = selectedPedidos.reduce((s, p) => s + parseFloat(p.cantidad), 0);
+                tempRouteForCalc = this.routeCalculator.calculateMultiStopRoute(sucursales, c, totalCarga);
+            } else {
+                tempRouteForCalc = this.routeCalculator.calculateSingleRouteWithCosts(selectedPedidos.sucursal, c, selectedPedidos.cantidad);
+            }
+
+            let tempCombustibleNecesario = tempRouteForCalc.distanciaTotal / parseFloat(c.kmPorGalon);
+            tempCombustibleNecesario = Math.ceil(tempCombustibleNecesario * 1.10);
+            const tempCostoCombustible = tempCombustibleNecesario * parseFloat(c.costoCombustible);
+            const tempCostoTotal = (tempRouteForCalc.distanciaTotal * this.COSTO_KM) + tempCostoCombustible;
+
+            let warning = '';
+            let isDisabled = false;
+
+            const totalCargaToCheck = Array.isArray(selectedPedidos) ? selectedPedidos.reduce((s, p) => s + parseFloat(p.cantidad), 0) : selectedPedidos.cantidad;
+            if (totalCargaToCheck > c.capacidad) {
+                warning = `(Capacidad Insuficiente: ${c.capacidad} Ton)`;
+                isDisabled = true;
+            }
+            if (tempCombustibleNecesario > currentFuel) {
+                warning += ` (Combustible Insuficiente)`;
+                isDisabled = true;
+            }
+
+            if (!isDisabled && tempCostoTotal < minCost) {
+                minCost = tempCostoTotal;
+                bestCamion = c;
+            }
+
+            camionesOptions += `<option value="${c.placa}" ${isSelected} ${isDisabled ? 'disabled' : ''}>
+                                ${c.placa} - ${c.marca} (${c.capacidad} Ton) ${warning}
+                                ${isDisabled ? '' : `($${tempCostoTotal.toFixed(2)})`}
+                                </option>`;
+        });
+
+        let bestCamionSuggestion = '';
+        if (bestCamion) {
+            if (bestCamion.placa !== route.camion.placa) {
+                bestCamionSuggestion = `<p class="text-info mt-2"><i class="fas fa-lightbulb"></i> <strong>Sugerencia:</strong> El camión más eficiente para este conjunto de pedidos es <strong>${bestCamion.placa} - ${bestCamion.marca} (${bestCamion.capacidad} Ton)</strong> (Costo estimado: $${minCost.toFixed(2)})</p>`;
+            } else {
+                bestCamionSuggestion = `<p class="text-success mt-2"><i class="fas fa-check-circle"></i> El camión seleccionado es la opción más eficiente para estos pedidos.</p>`;
+            }
+        } else {
+            bestCamionSuggestion = `<p class="text-danger mt-2"><i class="fas fa-exclamation-circle"></i> No hay camiones disponibles que puedan realizar estos pedidos con la cantidad de combustible y carga actuales.</p>`;
+        }
+
+        // Build pedidos summary (single or multiple)
+        let pedidosHtml = '';
+        if (Array.isArray(selectedPedidos)) {
+            pedidosHtml = selectedPedidos.map(p => `<li>${p.sucursal.nombre} — ${p.cantidad} Ton — ${p.fechaEnvio}</li>`).join('');
+            pedidosHtml = `<p><strong>Pedidos incluidos:</strong></p><ul>${pedidosHtml}</ul>`;
+        } else {
+            pedidosHtml = `<p><strong>Pedido:</strong> ${selectedPedidos.sucursal.nombre} (${selectedPedidos.cantidad} Ton)</p>`;
+        }
+
+        container.innerHTML = `
+            <div class="route-details">
+                <div class="mb-3">
+                    <label class="form-label">Cambiar Camión:</label>
+                    <select id="modificarCamion" class="form-control">
+                        ${camionesOptions}
+                    </select>
+                </div>
+                ${bestCamionSuggestion}
+                <div class="row">
+                    <div class="col-md-6">
+                        ${pedidosHtml}
+                        <p><strong>Camión Seleccionado:</strong> ${route.camion.placa} (${route.camion.marca})</p>
+                        <p><strong>Rendimiento:</strong> ${parseFloat(route.camion.kmPorGalon).toFixed(1)} km/gal</p>
+                        <p><strong>Distancia:</strong> ${route.distanciaTotal.toFixed(2)} km</p>
+                        <p><strong>Carga Requerida:</strong> ${route.cargaTotal.toFixed(2)} Ton</p>
+                    </div>
+                    <div class="col-md-6">
+                        <p><strong>Combustible Disponible:</strong> ${combustibleDisponible.toFixed(2)} gal</p>
+                        <p><strong>Combustible Necesario:</strong> ${combustibleNecesario.toFixed(0)} gal</p>
+                        <p><strong>Costo de Combustible:</strong> $${costoCombustible.toFixed(2)}</p>
+                        <p><strong>Costo Flete Operativo:</strong> $${costoFleteOperativo.toFixed(2)}</p>
+                        <p><strong>Total Flete:</strong> $${costoTotal.toFixed(2)}</p>
+                        <p><strong>Tiempo Estimado en Ruta:</strong> ${tiempoEstimado}</p>
+                        ${combustibleNecesario > combustibleDisponible ? 
+                            '<p class="text-warning"><i class="fas fa-exclamation-triangle"></i> El combustible disponible no es suficiente para completar la ruta</p>' : ''}
+                        ${route.cargaTotal > route.camion.capacidad ?
+                            `<p class="text-danger"><i class="fas fa-exclamation-triangle"></i> La carga total (${route.cargaTotal} Ton) excede la capacidad del camión (${route.camion.capacidad} Ton)</p>` : ''}
+                    </div>
+                </div>
+            </div>
+        `;
+
+        document.getElementById('modificarCamion').addEventListener('change', (e) => {
+            const nuevoCamionPlaca = e.target.value;
+            if (nuevoCamionPlaca) {
+                onRecalculateCallback(nuevoCamionPlaca);
+            }
+        });
+    }
+
+    clearRouteDetails() {
+        document.getElementById('rutaCalculada').style.display = 'none';
+        document.getElementById('rutaDetalles').innerHTML = '';
+        document.getElementById('rutasCalculadas').innerHTML = '';
+    }
+
+    updateValidatedRoutesList(onDeleteCallback) {
+        const tbody = document.querySelector(`#rutasValidadasTable tbody`);
+        tbody.innerHTML = '';
+        
+        this.dataStore.getAll('validatedRoutes').forEach((route, index) => {
+            const tr = document.createElement('tr');
+            tr.innerHTML = `
+                <td>${route.camion.placa}</td>
+                <td>${route.sucursales[0].nombre}</td>
+                <td>${route.distanciaTotal ? route.distanciaTotal.toFixed(2) : 'N/A'}</td>
+                <td>${route.cargaTotal ? route.cargaTotal.toFixed(2) : 'N/A'}</td>
+                <td>${route.costoCombustible ? route.costoCombustible.toFixed(2) : 'N/A'}</td>
+                <td>${route.costoTotal ? route.costoTotal.toFixed(2) : 'N/A'}</td>
+                <td>${route.fechaValidacion || 'N/A'}</td>
+                <td><span class="badge bg-success">${route.status}</span></td>
+                <td>
+                    <button class="btn btn-sm btn-danger" data-type="validatedRoutes" data-action="delete" data-index="${index}">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </td>
+            `;
+            tbody.appendChild(tr);
+        });
+
+        tbody.querySelectorAll('.btn-danger[data-type="validatedRoutes"]').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const index = parseInt(e.currentTarget.dataset.index);
+                onDeleteCallback('validatedRoutes', index);
+            });
+        });
+    }
+}

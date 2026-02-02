@@ -1,0 +1,287 @@
+{
+  "camiones": [
+    {
+      "placa": "C12345",
+      "marca": "Volvo",
+      "anioCompra": 2020,
+      "capacidad": 15,
+      "capacidadTanque": 53,
+      "costoCombustible": 4.25,
+      "kmPorGalon": 10
+    },
+    {
+      "placa": "C67890",
+      "marca": "Mercedes-Benz",
+      "anioCompra": 2019,
+      "capacidad": 20,
+      "capacidadTanque": 66,
+      "costoCombustible": 4.25,
+      "kmPorGalon": 8
+    },
+    {
+      "placa": "C11223",
+      "marca": "Scania",
+      "anioCompra": 2021,
+      "capacidad": 10,
+      "capacidadTanque": 48,
+      "costoCombustible": 4.25,
+      "kmPorGalon": 12
+    },
+    {
+      "placa": "C33445",
+      "marca": "MAN",
+      "anioCompra": 2018,
+      "capacidad": 25,
+      "capacidadTanque": 79,
+      "costoCombustible": 4.25,
+      "kmPorGalon": 7
+    },
+    {
+      "placa": "C55667",
+      "marca": "Volvo",
+      "anioCompra": 2022,
+      "capacidad": 18,
+      "capacidadTanque": 58,
+      "costoCombustible": 4.25,
+      "kmPorGalon": 9
+    },
+    {
+      "placa": "C77889",
+      "marca": "Mercedes-Benz",
+      "anioCompra": 2020,
+      "capacidad": 22,
+      "capacidadTanque": 71,
+      "costoCombustible": 4.25,
+      "kmPorGalon": 7.5
+    },
+    {
+      "placa": "C99001",
+      "marca": "Scania",
+      "anioCompra": 2019,
+      "capacidad": 12,
+      "capacidadTanque": 50,
+      "costoCombustible": 4.25,
+      "kmPorGalon": 11
+    },
+    {
+      "placa": "C22334",
+      "marca": "MAN",
+      "anioCompra": 2021,
+      "capacidad": 30,
+      "capacidadTanque": 92,
+      "costoCombustible": 4.25,
+      "kmPorGalon": 6
+    },
+    {
+      "placa": "C44556",
+      "marca": "Volvo",
+      "anioCompra": 2020,
+      "capacidad": 16,
+      "capacidadTanque": 55,
+      "costoCombustible": 4.25,
+      "kmPorGalon": 9.5
+    },
+    {
+      "placa": "C66778",
+      "marca": "Mercedes-Benz",
+      "anioCompra": 2022,
+      "capacidad": 28,
+      "capacidadTanque": 84,
+      "costoCombustible": 4.25,
+      "kmPorGalon": 6.5
+    }
+  ],
+  "sucursales": [
+    {
+      "nombre": "Santa Ana Centro",
+      "latitud": 13.9946,
+      "longitud": -89.5598,
+      "demanda": 8
+    },
+    {
+      "nombre": "San Salvador Centro",
+      "latitud": 13.6894,
+      "longitud": -89.1872,
+      "demanda": 15
+    },
+    {
+      "nombre": "San Miguel Principal",
+      "latitud": 13.4833,
+      "longitud": -88.1775,
+      "demanda": 12
+    },
+    {
+      "nombre": "Sonsonate",
+      "latitud": 13.7194,
+      "longitud": -89.7245,
+      "demanda": 7
+    },
+    {
+      "nombre": "La Libertad",
+      "latitud": 13.4883,
+      "longitud": -89.3222,
+      "demanda": 10
+    },
+    {
+      "nombre": "Usulután",
+      "latitud": 13.3428,
+      "longitud": -88.4396,
+      "demanda": 6
+    },
+    {
+      "nombre": "Chalatenango",
+      "latitud": 14.0361,
+      "longitud": -88.9358,
+      "demanda": 5
+    },
+    {
+      "nombre": "La Paz",
+      "latitud": 13.5069,
+      "longitud": -88.8697,
+      "demanda": 9
+    }
+  ],
+  "choferes": [
+    {
+      "nombre": "Juan Pérez",
+      "licencia": "LP12345",
+      "telefono": "7123-4567"
+    },
+    {
+      "nombre": "Carlos Martínez",
+      "licencia": "LP67890",
+      "telefono": "7234-5678"
+    },
+    {
+      "nombre": "Roberto Díaz",
+      "licencia": "LP11223",
+      "telefono": "7345-6789"
+    },
+    {
+      "nombre": "Miguel Ángel Rivas",
+      "licencia": "LP33445",
+      "telefono": "7456-7890"
+    },
+    {
+      "nombre": "José Morales",
+      "licencia": "LP55667",
+      "telefono": "7567-8901"
+    },
+    {
+      "nombre": "Francisco Guzmán",
+      "licencia": "LP77889",
+      "telefono": "7678-9012"
+    },
+    {
+      "nombre": "Eduardo López",
+      "licencia": "LP99001",
+      "telefono": "7789-0123"
+    },
+    {
+      "nombre": "Ricardo Flores",
+      "licencia": "LP22334",
+      "telefono": "7890-1234"
+    },
+    {
+      "nombre": "Antonio Mendoza",
+      "licencia": "LP44556",
+      "telefono": "7901-2345"
+    },
+    {
+      "nombre": "Daniel Castro",
+      "licencia": "LP66778",
+      "telefono": "7012-3456"
+    }
+  ],
+  "pedidos": [
+    {
+      "sucursal": {
+        "nombre": "Chalatenango",
+        "latitud": 14.0361,
+        "longitud": -88.9358,
+        "demanda": 5
+      },
+      "cantidad": 4,
+      "fechaEnvio": "2026-07-01",
+      "estado": "Pendiente"
+    },
+    {
+      "sucursal": {
+        "nombre": "Chalatenango",
+        "latitud": 14.0361,
+        "longitud": -88.9358,
+        "demanda": 5
+      },
+      "cantidad": 3,
+      "fechaEnvio": "2026-07-03",
+      "estado": "Pendiente"
+    },
+    {
+      "sucursal": {
+        "nombre": "Sonsonate",
+        "latitud": 13.7194,
+        "longitud": -89.7245,
+        "demanda": 7
+      },
+      "cantidad": 6,
+      "fechaEnvio": "2026-07-05",
+      "estado": "Pendiente"
+    },
+    {
+      "sucursal": {
+        "nombre": "Sonsonate",
+        "latitud": 13.7194,
+        "longitud": -89.7245,
+        "demanda": 7
+      },
+      "cantidad": 5,
+      "fechaEnvio": "2026-07-07",
+      "estado": "Pendiente"
+    },
+    {
+      "sucursal": {
+        "nombre": "Sonsonate",
+        "latitud": 13.7194,
+        "longitud": -89.7245,
+        "demanda": 7
+      },
+      "cantidad": 7,
+      "fechaEnvio": "2026-07-09",
+      "estado": "Pendiente"
+    },
+    {
+      "sucursal": {
+        "nombre": "Santa Ana Centro",
+        "latitud": 13.9946,
+        "longitud": -89.5598,
+        "demanda": 8
+      },
+      "cantidad": 7,
+      "fechaEnvio": "2026-07-11",
+      "estado": "Pendiente"
+    },
+    {
+      "sucursal": {
+        "nombre": "Santa Ana Centro",
+        "latitud": 13.9946,
+        "longitud": -89.5598,
+        "demanda": 8
+      },
+      "cantidad": 8,
+      "fechaEnvio": "2026-07-13",
+      "estado": "Pendiente"
+    },
+    {
+      "sucursal": {
+        "nombre": "Santa Ana Centro",
+        "latitud": 13.9946,
+        "longitud": -89.5598,
+        "demanda": 8
+      },
+      "cantidad": 6,
+      "fechaEnvio": "2026-07-15",
+      "estado": "Pendiente"
+    }
+  ],
+  "validatedRoutes": []
+}
