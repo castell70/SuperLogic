@@ -34,6 +34,9 @@ export class FormHandler {
                         data.latitud = parseFloat(data.latitud);
                         data.longitud = parseFloat(data.longitud);
                         data.demanda = parseFloat(data.demanda);
+                    } else if (type === 'choferes') {
+                        // Parse salario as number
+                        data.salario = parseFloat(data.salario);
                     }
                     
                     onSubmitCallback(type, data); // Delegate adding to the main app logic

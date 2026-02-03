@@ -382,19 +382,25 @@
             <h2>Gestión de Choferes</h2>
             <form id="choferForm">
                 <div class="row">
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="mb-3">
                             <label class="form-label">Nombre</label>
                             <input type="text" class="form-control" name="nombre" required>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
                         <div class="mb-3">
                             <label class="form-label">Licencia</label>
                             <input type="text" class="form-control" name="licencia" required>
                         </div>
                     </div>
-                    <div class="col-md-4">
+                    <div class="col-md-3">
+                        <div class="mb-3">
+                            <label class="form-label">Salario ($)</label>
+                            <input type="number" step="0.01" class="form-control" name="salario" required>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
                         <div class="mb-3">
                             <label class="form-label">Teléfono</label>
                             <input type="tel" class="form-control" name="telefono" required>
@@ -409,6 +415,7 @@
                         <tr>
                             <th>Nombre</th>
                             <th>Licencia</th>
+                            <th>Salario ($)</th>
                             <th>Teléfono</th>
                             <th>Acciones</th>
                         </tr>

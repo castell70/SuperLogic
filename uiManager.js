@@ -134,6 +134,7 @@ export class UIManager {
                     tr.innerHTML = `
                         <td><input type="text" class="form-control form-control-sm" value="${item.nombre}" data-field="nombre" data-original="${item.nombre}"></td>
                         <td><input type="text" class="form-control form-control-sm" value="${item.licencia}" data-field="licencia" data-original="${item.licencia}"></td>
+                        <td>$<input type="number" step="0.01" class="form-control form-control-sm d-inline-block w-50" value="${item.salario !== undefined ? item.salario : ''}" data-field="salario" data-original="${item.salario !== undefined ? item.salario : ''}"></td>
                         <td><input type="text" class="form-control form-control-sm" value="${item.telefono}" data-field="telefono" data-original="${item.telefono}"></td>
                         <td>
                             <button class="btn btn-sm btn-success me-2 btn-save" style="display:none;" data-type="choferes" data-index="${index}">
@@ -360,7 +361,7 @@ export class UIManager {
         cantidadCombustibleInput.value = combustibleNecesario.toFixed(0); // Display as integer
     }
 
-    displaySingleRouteInfo(route, allCamiones, selectedPedidos, currentFuel, onRecalculateCallback) {
+    displaySingleRouteInfo(route, allCamiones, selectedPedidos, currentFuel) {
         const container = document.getElementById('rutaDetalles');
         
         // route may represent multiple pedidos; selectedPedidos can be an array
@@ -378,62 +379,6 @@ export class UIManager {
         route.combustibleDisponible = combustibleDisponible;
         route.tiempoEstimado = tiempoEstimado;
 
-        let camionesOptions = '';
-        let bestCamion = null;
-        let minCost = Infinity;
-
-        allCamiones.forEach(c => {
-            const isSelected = c.placa === route.camion.placa ? 'selected' : '';
-            // For multi-stop/aggregate cost comparison, use calculateMultiStopRoute if multiple pedidos
-            let tempRouteForCalc;
-            if (Array.isArray(selectedPedidos)) {
-                const sucursales = selectedPedidos.map(p => p.sucursal);
-                const totalCarga = selectedPedidos.reduce((s, p) => s + parseFloat(p.cantidad), 0);
-                tempRouteForCalc = this.routeCalculator.calculateMultiStopRoute(sucursales, c, totalCarga);
-            } else {
-                tempRouteForCalc = this.routeCalculator.calculateSingleRouteWithCosts(selectedPedidos.sucursal, c, selectedPedidos.cantidad);
-            }
-
-            let tempCombustibleNecesario = tempRouteForCalc.distanciaTotal / parseFloat(c.kmPorGalon);
-            tempCombustibleNecesario = Math.ceil(tempCombustibleNecesario * 1.10);
-            const tempCostoCombustible = tempCombustibleNecesario * parseFloat(c.costoCombustible);
-            const tempCostoTotal = (tempRouteForCalc.distanciaTotal * this.COSTO_KM) + tempCostoCombustible;
-
-            let warning = '';
-            let isDisabled = false;
-
-            const totalCargaToCheck = Array.isArray(selectedPedidos) ? selectedPedidos.reduce((s, p) => s + parseFloat(p.cantidad), 0) : selectedPedidos.cantidad;
-            if (totalCargaToCheck > c.capacidad) {
-                warning = `(Capacidad Insuficiente: ${c.capacidad} Ton)`;
-                isDisabled = true;
-            }
-            if (tempCombustibleNecesario > currentFuel) {
-                warning += ` (Combustible Insuficiente)`;
-                isDisabled = true;
-            }
-
-            if (!isDisabled && tempCostoTotal < minCost) {
-                minCost = tempCostoTotal;
-                bestCamion = c;
-            }
-
-            camionesOptions += `<option value="${c.placa}" ${isSelected} ${isDisabled ? 'disabled' : ''}>
-                                ${c.placa} - ${c.marca} (${c.capacidad} Ton) ${warning}
-                                ${isDisabled ? '' : `($${tempCostoTotal.toFixed(2)})`}
-                                </option>`;
-        });
-
-        let bestCamionSuggestion = '';
-        if (bestCamion) {
-            if (bestCamion.placa !== route.camion.placa) {
-                bestCamionSuggestion = `<p class="text-info mt-2"><i class="fas fa-lightbulb"></i> <strong>Sugerencia:</strong> El camión más eficiente para este conjunto de pedidos es <strong>${bestCamion.placa} - ${bestCamion.marca} (${bestCamion.capacidad} Ton)</strong> (Costo estimado: $${minCost.toFixed(2)})</p>`;
-            } else {
-                bestCamionSuggestion = `<p class="text-success mt-2"><i class="fas fa-check-circle"></i> El camión seleccionado es la opción más eficiente para estos pedidos.</p>`;
-            }
-        } else {
-            bestCamionSuggestion = `<p class="text-danger mt-2"><i class="fas fa-exclamation-circle"></i> No hay camiones disponibles que puedan realizar estos pedidos con la cantidad de combustible y carga actuales.</p>`;
-        }
-
         // Build pedidos summary (single or multiple)
         let pedidosHtml = '';
         if (Array.isArray(selectedPedidos)) {
@@ -445,13 +390,6 @@ export class UIManager {
 
         container.innerHTML = `
             <div class="route-details">
-                <div class="mb-3">
-                    <label class="form-label">Cambiar Camión:</label>
-                    <select id="modificarCamion" class="form-control">
-                        ${camionesOptions}
-                    </select>
-                </div>
-                ${bestCamionSuggestion}
                 <div class="row">
                     <div class="col-md-6">
                         ${pedidosHtml}
@@ -475,13 +413,6 @@ export class UIManager {
                 </div>
             </div>
         `;
-
-        document.getElementById('modificarCamion').addEventListener('change', (e) => {
-            const nuevoCamionPlaca = e.target.value;
-            if (nuevoCamionPlaca) {
-                onRecalculateCallback(nuevoCamionPlaca);
-            }
-        });
     }
 
     clearRouteDetails() {

@@ -145,52 +145,62 @@
     {
       "nombre": "Juan Pérez",
       "licencia": "LP12345",
-      "telefono": "7123-4567"
+      "telefono": "7123-4567",
+      "salario": 420.50
     },
     {
       "nombre": "Carlos Martínez",
       "licencia": "LP67890",
-      "telefono": "7234-5678"
+      "telefono": "7234-5678",
+      "salario": 385.75
     },
     {
       "nombre": "Roberto Díaz",
       "licencia": "LP11223",
-      "telefono": "7345-6789"
+      "telefono": "7345-6789",
+      "salario": 460.00
     },
     {
       "nombre": "Miguel Ángel Rivas",
       "licencia": "LP33445",
-      "telefono": "7456-7890"
+      "telefono": "7456-7890",
+      "salario": 399.99
     },
     {
       "nombre": "José Morales",
       "licencia": "LP55667",
-      "telefono": "7567-8901"
+      "telefono": "7567-8901",
+      "salario": 435.25
     },
     {
       "nombre": "Francisco Guzmán",
       "licencia": "LP77889",
-      "telefono": "7678-9012"
+      "telefono": "7678-9012",
+      "salario": 410.00
     },
     {
       "nombre": "Eduardo López",
       "licencia": "LP99001",
-      "telefono": "7789-0123"
+      "telefono": "7789-0123",
+      "salario": 375.00
     },
     {
       "nombre": "Ricardo Flores",
       "licencia": "LP22334",
-      "telefono": "7890-1234"
+      "telefono": "7890-1234",
+      "salario": 448.80
     },
     {
       "nombre": "Antonio Mendoza",
       "licencia": "LP44556",
-      "telefono": "7901-2345"
+      "telefono": "7901-2345",
+      "salario": 390.50
     },
     {
       "nombre": "Daniel Castro",
       "licencia": "LP66778",
-      "telefono": "7012-3456"
+      "telefono": "7012-3456",
+      "salario": 422.00
     }
   ],
   "pedidos": [

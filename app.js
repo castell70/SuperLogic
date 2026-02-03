@@ -260,8 +260,7 @@ class App {
                 this.currentRoute,
                 this.dataStore.getAll('camiones'),
                 pedidos, // pass array of pedidos for UI
-                cantidadCombustible,
-                this.recalculateSingleRoute.bind(this)
+                cantidadCombustible
             );
             
             document.getElementById('rutaCalculada').style.display = 'block';
