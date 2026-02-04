@@ -141,6 +141,67 @@ body {
     border-left: 4px solid var(--secondary-color);
 }
 
+/* Cost breakdown tooltip for Costo del Flete */
+.cost-breakdown {
+    position: relative;
+    display: inline-block;
+    cursor: help;
+    color: var(--primary-color);
+    font-weight: 700;
+    text-decoration: underline dotted;
+}
+
+.cost-breakdown-popup {
+    display: none;
+    position: absolute;
+    right: 0;
+    top: 120%;
+    background: white;
+    color: var(--text-color);
+    border: 1px solid #e0e0e0;
+    box-shadow: 0 6px 18px rgba(0,0,0,0.12);
+    padding: 10px;
+    border-radius: 8px;
+    min-width: 260px;
+    z-index: 9999;
+    font-size: 0.95rem;
+}
+
+.cost-breakdown-popup table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.cost-breakdown-popup td,
+.cost-breakdown-popup th {
+    padding: 6px 8px;
+    text-align: left;
+    border-bottom: 1px solid #f1f1f1;
+}
+
+.cost-breakdown-popup th {
+    font-weight: 700;
+    font-size: 0.9rem;
+    color: var(--primary-color);
+}
+
+.cost-breakdown:hover .cost-breakdown-popup,
+.cost-breakdown:focus .cost-breakdown-popup {
+    display: block;
+}
+
+/* Small arrow */
+.cost-breakdown-popup::before {
+    content: "";
+    position: absolute;
+    top: -6px;
+    right: 12px;
+    border-width: 6px;
+    border-style: solid;
+    border-color: transparent transparent white transparent;
+    filter: drop-shadow(0 -1px 0 rgba(0,0,0,0.03));
+}
+
 .route-info.validated {
     border-left: 4px solid #28a745;
     background-color: #f8fff8;

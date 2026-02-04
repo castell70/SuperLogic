@@ -1,6 +1,7 @@
 export class DataStore {
     constructor() {
         // Datos actualizados con capacidad de tanque en galones (convertidos de litros)
+        // Añadimos campos 'disponible' por defecto para camiones y choferes (true)
         this.data = {
             camiones: [],
             sucursales: [],
@@ -11,22 +12,25 @@ export class DataStore {
     }
 
     add(type, item) {
-        // Ensure numeric fields are parsed as numbers if needed, though form data comes as strings
-        // And for `kmPorGalon`, ensure it's treated as a string too for consistency if not parsed immediately
         if (type === 'camiones') {
             item.anioCompra = parseFloat(item.anioCompra);
             item.capacidad = parseFloat(item.capacidad);
             item.capacidadTanque = parseFloat(item.capacidadTanque);
             item.costoCombustible = parseFloat(item.costoCombustible);
-            item.kmPorGalon = parseFloat(item.kmPorGalon); // Parse the new field
+            item.kmPorGalon = parseFloat(item.kmPorGalon);
+            // Set disponibilidad por defecto si no existe
+            if (item.disponible === undefined) item.disponible = true;
         } else if (type === 'sucursales') {
             item.latitud = parseFloat(item.latitud);
             item.longitud = parseFloat(item.longitud);
             item.demanda = parseFloat(item.demanda);
         } else if (type === 'pedidos') {
-            item.cantidad = parseFloat(item.cantidad); // Ensure quantity is a number
-            // sucursal object is already passed from app.js
-            // estado is already set in app.js
+            item.cantidad = parseFloat(item.cantidad);
+            // estado and fechaEnvio are set by caller
+        } else if (type === 'choferes') {
+            // Ensure salario is number and disponibilidad default
+            if (item.salario !== undefined) item.salario = parseFloat(item.salario);
+            if (item.disponible === undefined) item.disponible = true;
         }
         this.data[type].push(item);
     }
@@ -58,9 +62,24 @@ export class DataStore {
             if (newStatus === 'Despachado') {
                 this.data.pedidos[index].fechaDespacho = new Date().toISOString().split('T')[0];
             }
+            // Set fechaEntrega if status is 'Entregado'
+            if (newStatus === 'Entregado') {
+                this.data.pedidos[index].fechaEntrega = new Date().toISOString().split('T')[0];
+            }
         } else {
             console.error('Pedido not found at index:', index);
         }
+    }
+
+    // Methods to set disponibilidad for camiones y choferes
+    setCamionDisponibilidad(placa, disponible) {
+        const camion = this.data.camiones.find(c => c.placa === placa);
+        if (camion) camion.disponible = !!disponible;
+    }
+
+    setChoferDisponibilidad(licencia, disponible) {
+        const chofer = this.data.choferes.find(ch => ch.licencia === licencia);
+        if (chofer) chofer.disponible = !!disponible;
     }
 
     // New methods for data management
@@ -86,6 +105,9 @@ export class DataStore {
             Array.isArray(newData.choferes) &&
             Array.isArray(newData.pedidos) && // Validate new pedidos array
             Array.isArray(newData.validatedRoutes)) {
+            // Ensure camiones and choferes have disponible flag
+            newData.camiones = newData.camiones.map(c => ({ disponible: true, ...c }));
+            newData.choferes = newData.choferes.map(ch => ({ disponible: true, ...ch }));
             this.data = newData;
         } else {
             throw new Error('Invalid data structure for loading. Expected camiones, sucursales, choferes, pedidos, and validatedRoutes arrays.');

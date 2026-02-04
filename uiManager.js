@@ -78,9 +78,14 @@ export class UIManager {
         document.getElementById('totalRutasValidadas').textContent = this.dataStore.getAll('validatedRoutes').length;
         // Updated to count both 'Pendiente' and 'En Proceso' as pending for the dashboard
         document.getElementById('totalPedidosPendientes').textContent = this.dataStore.getAll('pedidos').filter(p => p.estado === 'Pendiente' || p.estado === 'En Proceso').length;
+        // New: count delivered orders
+        const entregadosCount = this.dataStore.getAll('pedidos').filter(p => p.estado === 'Entregado').length;
+        // Ensure the element exists before updating to avoid errors on pages without the dashboard
+        const entregadosEl = document.getElementById('totalPedidosEntregados');
+        if (entregadosEl) entregadosEl.textContent = entregadosCount;
     }
 
-    updateTable(type, onSaveCallback, onDeleteCallback, onDispatchCallback = null) {
+    updateTable(type, onSaveCallback, onDeleteCallback, onDispatchCallback = null, onDeliverCallback = null) {
         const tbody = document.querySelector(`#${type}Table tbody`);
         if (!tbody) return;
         tbody.innerHTML = '';
@@ -159,7 +164,10 @@ export class UIManager {
                             statusClass = 'bg-info text-white';
                             break;
                         case 'Despachado':
-                            statusClass = 'bg-success';
+                            statusClass = 'bg-primary text-white';
+                            break;
+                        case 'Entregado':
+                            statusClass = 'bg-success text-white';
                             break;
                         default:
                             statusClass = 'bg-secondary';
@@ -176,8 +184,12 @@ export class UIManager {
                                 <i class="fas fa-trash"></i>
                             </button>
                             ${item.estado === 'En Proceso' ? 
-                                `<button class="btn btn-sm btn-primary" data-type="pedidos" data-action="dispatch" data-index="${index}">
+                                `<button class="btn btn-sm btn-primary me-2" data-type="pedidos" data-action="dispatch" data-index="${index}">
                                     <i class="fas fa-check-circle"></i> Despachado
+                                </button>` : ''}
+                            ${item.estado === 'Despachado' ? 
+                                `<button class="btn btn-sm btn-success" data-type="pedidos" data-action="delivered" data-index="${index}">
+                                    <i class="fas fa-truck"></i> Entregado
                                 </button>` : ''}
                         </td>
                     `;
@@ -241,7 +253,7 @@ export class UIManager {
                 });
             }
 
-            // Attach listeners for delete and dispatch buttons if they exist
+            // Attach listeners for delete buttons
             tr.querySelectorAll('.btn-danger[data-action="delete"]').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const index = parseInt(e.currentTarget.dataset.index);
@@ -249,11 +261,22 @@ export class UIManager {
                 });
             });
             
+            // Dispatch (Despachado) button
             tr.querySelectorAll('.btn-primary[data-action="dispatch"]').forEach(button => {
                 button.addEventListener('click', (e) => {
                     const index = parseInt(e.currentTarget.dataset.index);
                     if (onDispatchCallback) {
                         onDispatchCallback(index);
+                    }
+                });
+            });
+
+            // Deliver (Entregado) button
+            tr.querySelectorAll('.btn-success[data-action="delivered"]').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const index = parseInt(e.currentTarget.dataset.index);
+                    if (onDeliverCallback) {
+                        onDeliverCallback(index);
                     }
                 });
             });
@@ -300,15 +323,18 @@ export class UIManager {
         });
     }
 
-    updateSelectors(camiones, pendingPedidos) {
+    updateSelectors(camiones, pendingPedidos, choferes = []) {
         const selectCamion = document.getElementById('selectCamion');
         const selectPedidoRuta = document.getElementById('selectPedidoRuta');
+        const selectChofer = document.getElementById('selectChofer');
         
         selectCamion.innerHTML = '<option value="">Seleccione un camión</option>';
         // Keep the placeholder option, preserve multi-select behavior
         selectPedidoRuta.innerHTML = '<option value="">Seleccione uno o más pedidos</option>';
+        if (selectChofer) selectChofer.innerHTML = '<option value="">Seleccione un chofer</option>';
         
-        camiones.forEach(camion => {
+        // Only include camiones disponibles (undefined or true means available)
+        camiones.filter(c => c.disponible !== false).forEach(camion => {
             selectCamion.innerHTML += `<option value="${camion.placa}">${camion.placa} - ${camion.marca} (${camion.capacidad} Ton)</option>`;
         });
         
@@ -318,6 +344,14 @@ export class UIManager {
             const originalIndex = this.dataStore.getAll('pedidos').findIndex(p => p === pedido);
             selectPedidoRuta.innerHTML += `<option value="${originalIndex}">${pedido.sucursal.nombre} (${pedido.cantidad} Ton) - ${pedido.fechaEnvio} [${pedido.estado}]</option>`;
         });
+
+        // Populate chofer selector with name and salary displayed; use licencia as value
+        // Only include choferes disponibles
+        if (selectChofer && Array.isArray(choferes)) {
+            choferes.filter(ch => ch.disponible !== false).forEach(chofer => {
+                selectChofer.innerHTML += `<option value="${chofer.licencia}">${chofer.nombre} — $${parseFloat(chofer.salario || 0).toFixed(2)}</option>`;
+            });
+        }
     }
 
     // New method to calculate and set fuel in the input field
@@ -361,7 +395,7 @@ export class UIManager {
         cantidadCombustibleInput.value = combustibleNecesario.toFixed(0); // Display as integer
     }
 
-    displaySingleRouteInfo(route, allCamiones, selectedPedidos, currentFuel) {
+    displaySingleRouteInfo(route, allCamiones, selectedPedidos, currentFuel, chofer = null) {
         const container = document.getElementById('rutaDetalles');
         
         // route may represent multiple pedidos; selectedPedidos can be an array
@@ -369,7 +403,16 @@ export class UIManager {
         const combustibleDisponible = currentFuel;
         const costoCombustible = combustibleNecesario * parseFloat(route.camion.costoCombustible);
         const costoFleteOperativo = route.distanciaTotal * this.COSTO_KM;
-        const costoTotal = costoFleteOperativo + costoCombustible;
+
+        // Determine "Otros Costos" - if a chofer is selected, add 10% of their salary
+        let otrosCostosVal = 0;
+        if (chofer && chofer.salario !== undefined && !isNaN(parseFloat(chofer.salario))) {
+            otrosCostosVal = parseFloat(chofer.salario) * 0.10; // 10% del salario del chofer
+        } else if (route.otrosCostos !== undefined) {
+            otrosCostosVal = parseFloat(route.otrosCostos) || 0;
+        }
+
+        const costoTotal = costoFleteOperativo + costoCombustible + otrosCostosVal;
         const tiempoEstimadoHoras = route.distanciaTotal / this.AVERAGE_SPEED_KMH;
         const tiempoEstimado = `${Math.floor(tiempoEstimadoHoras)}h ${Math.round((tiempoEstimadoHoras % 1) * 60)}min`;
 
@@ -378,6 +421,7 @@ export class UIManager {
         route.combustibleNecesarioDisplay = combustibleNecesario;
         route.combustibleDisponible = combustibleDisponible;
         route.tiempoEstimado = tiempoEstimado;
+        route.otrosCostos = otrosCostosVal;
 
         // Build pedidos summary (single or multiple)
         let pedidosHtml = '';
@@ -388,12 +432,36 @@ export class UIManager {
             pedidosHtml = `<p><strong>Pedido:</strong> ${selectedPedidos.sucursal.nombre} (${selectedPedidos.cantidad} Ton)</p>`;
         }
 
+        // Build cost breakdown popup content (without repeating the total beside it)
+        const costoCombustibleVal = costoCombustible || 0;
+        const costoFleteOperativoVal = costoFleteOperativo || 0;
+        const costoTotalVal = costoTotal || (costoCombustibleVal + costoFleteOperativoVal + otrosCostosVal);
+
+        const breakdownPopup = `
+            <div class="cost-breakdown" tabindex="0" aria-label="Desglose del costo del flete">
+                <span style="font-weight:700; margin-left:8px; text-decoration:underline dotted; cursor:help;">(Ver desglose)</span>
+                <div class="cost-breakdown-popup" role="tooltip">
+                    <table>
+                        <tr><th>Concepto</th><th style="text-align:right">Monto ($)</th></tr>
+                        <tr><td>Costo Combustible</td><td style="text-align:right">$${costoCombustibleVal.toFixed(2)}</td></tr>
+                        <tr><td>Costo Flete Operativo (km x $/km)</td><td style="text-align:right">$${costoFleteOperativoVal.toFixed(2)}</td></tr>
+                        <tr><td>Otros Costos (10% Salario Chofer)</td><td style="text-align:right">$${otrosCostosVal.toFixed(2)}</td></tr>
+                        <tr><th>Total</th><th style="text-align:right">$${costoTotalVal.toFixed(2)}</th></tr>
+                    </table>
+                </div>
+            </div>
+        `;
+
+        // Chofer info block
+        const choferHtml = chofer ? `<p><strong>Chofer Asignado:</strong> ${chofer.nombre} — Salario: $${parseFloat(chofer.salario || 0).toFixed(2)}</p>` : '';
+
         container.innerHTML = `
             <div class="route-details">
                 <div class="row">
                     <div class="col-md-6">
                         ${pedidosHtml}
                         <p><strong>Camión Seleccionado:</strong> ${route.camion.placa} (${route.camion.marca})</p>
+                        ${choferHtml}
                         <p><strong>Rendimiento:</strong> ${parseFloat(route.camion.kmPorGalon).toFixed(1)} km/gal</p>
                         <p><strong>Distancia:</strong> ${route.distanciaTotal.toFixed(2)} km</p>
                         <p><strong>Carga Requerida:</strong> ${route.cargaTotal.toFixed(2)} Ton</p>
@@ -401,9 +469,9 @@ export class UIManager {
                     <div class="col-md-6">
                         <p><strong>Combustible Disponible:</strong> ${combustibleDisponible.toFixed(2)} gal</p>
                         <p><strong>Combustible Necesario:</strong> ${combustibleNecesario.toFixed(0)} gal</p>
-                        <p><strong>Costo de Combustible:</strong> $${costoCombustible.toFixed(2)}</p>
-                        <p><strong>Costo Flete Operativo:</strong> $${costoFleteOperativo.toFixed(2)}</p>
-                        <p><strong>Total Flete:</strong> $${costoTotal.toFixed(2)}</p>
+                        <p><strong>Costo de Combustible:</strong> $${costoCombustibleVal.toFixed(2)}</p>
+                        <p><strong>Costo Flete Operativo:</strong> $${costoFleteOperativoVal.toFixed(2)}</p>
+                        <p><strong>Total Flete:</strong> $${costoTotalVal.toFixed(2)} ${breakdownPopup}</p>
                         <p><strong>Tiempo Estimado en Ruta:</strong> ${tiempoEstimado}</p>
                         ${combustibleNecesario > combustibleDisponible ? 
                             '<p class="text-warning"><i class="fas fa-exclamation-triangle"></i> El combustible disponible no es suficiente para completar la ruta</p>' : ''}

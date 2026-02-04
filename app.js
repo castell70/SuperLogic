@@ -66,8 +66,14 @@ class App {
                     this.updateFuelInput(); // Initial call to populate fuel field if selectors have default values
                 } else if (e.target.dataset.section === 'pedidos') {
                     this.uiManager.updatePedidoSucursalSelector(this.dataStore.getAll('sucursales'));
-                    // Update the pedidos table with the new dispatch callback
-                    this.uiManager.updateTable('pedidos', null, this.handleDelete.bind(this), this.handleMarkAsDispatched.bind(this)); 
+                    // Always rebind the pedidos table with both dispatch and deliver callbacks
+                    this.uiManager.updateTable(
+                        'pedidos',
+                        null,
+                        this.handleDelete.bind(this),
+                        this.handleMarkAsDispatched.bind(this),
+                        this.handleMarkAsDelivered.bind(this)
+                    );
                 }
             });
         });
@@ -110,8 +116,8 @@ class App {
         this.uiManager.updateTable('camiones', this.handleInlineSave.bind(this), this.handleDelete.bind(this));
         this.uiManager.updateTable('sucursales', this.handleInlineSave.bind(this), this.handleDelete.bind(this));
         this.uiManager.updateTable('choferes', this.handleInlineSave.bind(this), this.handleDelete.bind(this));
-        // Pass the new dispatch callback for pedidos table
-        this.uiManager.updateTable('pedidos', null, this.handleDelete.bind(this), this.handleMarkAsDispatched.bind(this)); 
+        // Pass the new dispatch and delivery callbacks for pedidos table
+        this.uiManager.updateTable('pedidos', null, this.handleDelete.bind(this), this.handleMarkAsDispatched.bind(this), this.handleMarkAsDelivered.bind(this)); 
         this.uiManager.updateValidatedRoutesList(this.handleDelete.bind(this)); // Validaded routes has only delete
     }
 
@@ -121,8 +127,9 @@ class App {
         let saveCb = (type === 'camiones' || type === 'sucursales' || type === 'choferes') ? this.handleInlineSave.bind(this) : null;
         let deleteCb = this.handleDelete.bind(this);
         let dispatchCb = (type === 'pedidos') ? this.handleMarkAsDispatched.bind(this) : null;
+        let deliverCb = (type === 'pedidos') ? this.handleMarkAsDelivered.bind(this) : null;
 
-        this.uiManager.updateTable(type, saveCb, deleteCb, dispatchCb);
+        this.uiManager.updateTable(type, saveCb, deleteCb, dispatchCb, deliverCb);
         this.uiManager.updateDashboard();
         this.updateRouteRelatedUI(); // Update selectors/dashboard elements that depend on new data
     }
@@ -145,8 +152,34 @@ class App {
             () => {
                 try {
                     if (type === 'validatedRoutes') {
+                        // Before removing the validated route, revert affected pedidos to 'Pendiente'
+                        const validatedRoutes = this.dataStore.getAll('validatedRoutes');
+                        const route = validatedRoutes[index];
+                        if (route && Array.isArray(route.pedidoIndices)) {
+                            route.pedidoIndices.forEach(pIdx => {
+                                if (this.dataStore.getAll('pedidos')[pIdx]) {
+                                    this.dataStore.updatePedidoStatus(pIdx, 'Pendiente');
+                                    // Remove despacho/entrega dates when reverting
+                                    delete this.dataStore.getAll('pedidos')[pIdx].fechaDespacho;
+                                    delete this.dataStore.getAll('pedidos')[pIdx].fechaEntrega;
+                                }
+                            });
+                        }
+                        // Free camion and chofer if they were reserved by this route
+                        if (route && route.camion && route.camion.placa) {
+                            this.dataStore.setCamionDisponibilidad(route.camion.placa, true);
+                        }
+                        if (route && route.chofer && route.chofer.licencia) {
+                            this.dataStore.setChoferDisponibilidad(route.chofer.licencia, true);
+                        }
+
+                        // Now remove the validated route
                         this.dataStore.removeValidatedRoute(index);
                         this.uiManager.updateValidatedRoutesList(this.handleDelete.bind(this));
+                        // Refresh pedidos, camiones and choferes tables to reflect changes
+                        this.uiManager.updateTable('pedidos', null, this.handleDelete.bind(this), this.handleMarkAsDispatched.bind(this), this.handleMarkAsDelivered.bind(this));
+                        this.uiManager.updateTable('camiones', this.handleInlineSave.bind(this), this.handleDelete.bind(this));
+                        this.uiManager.updateTable('choferes', this.handleInlineSave.bind(this), this.handleDelete.bind(this));
                     } else {
                         this.dataStore.remove(type, index);
                         // Re-render table with correct callbacks
@@ -166,24 +199,80 @@ class App {
     }
 
     handleMarkAsDispatched(index) {
-        // As per instruction, removing the blocking confirm dialog
-        // The success message will now be shown directly in the toast.
+        // Mark pedido as 'Despachado'. If the pedido is part of a validated route with multiple pedidos,
+        // mark all pedidos in that route as 'Despachado' to preserve consolidated dispatch behavior.
         try {
-            this.dataStore.updatePedidoStatus(index, 'Despachado');
-            this.uiManager.updateTable('pedidos', null, this.handleDelete.bind(this), this.handleMarkAsDispatched.bind(this));
+            const pedidos = this.dataStore.getAll('pedidos');
+            if (!pedidos[index]) {
+                this.uiManager.showNotification('Pedido no encontrado.', true);
+                return;
+            }
+
+            // Find any validated route that includes this pedido index
+            const validatedRoutes = this.dataStore.getAll('validatedRoutes');
+            const containingRoute = validatedRoutes.find(route => Array.isArray(route.pedidoIndices) && route.pedidoIndices.includes(index));
+
+            if (containingRoute && Array.isArray(containingRoute.pedidoIndices) && containingRoute.pedidoIndices.length > 1) {
+                // If route contains more than one pedido, mark all of them as Despachado
+                containingRoute.pedidoIndices.forEach(pIdx => {
+                    if (this.dataStore.getAll('pedidos')[pIdx]) {
+                        this.dataStore.updatePedidoStatus(pIdx, 'Despachado');
+                    }
+                });
+                this.uiManager.showNotification('Todos los pedidos de la ruta consolidada han sido marcados como "Despachado".', false);
+            } else {
+                // Single pedido or not part of a validated route: mark only this pedido
+                this.dataStore.updatePedidoStatus(index, 'Despachado');
+                this.uiManager.showNotification('Pedido marcado como "Despachado" exitosamente.', false);
+            }
+
+            // Refresh tables and UI
+            this.uiManager.updateTable('pedidos', null, this.handleDelete.bind(this), this.handleMarkAsDispatched.bind(this), this.handleMarkAsDelivered.bind(this));
             this.uiManager.updateDashboard();
             this.updateRouteRelatedUI(); // Update pending orders selector
-            this.uiManager.showNotification('Pedido marcado como "Despachado" exitosamente.', false); // Changed to explicitly success
         } catch (error) {
             this.uiManager.showNotification(`Error al marcar pedido como despachado: ${error.message}`, true);
         }
     }
 
+    handleMarkAsDelivered(index) {
+        try {
+            // Mark pedido as Entregado
+            this.dataStore.updatePedidoStatus(index, 'Entregado');
+
+            // Find validated route(s) that include this pedido index and free camion/chofer
+            const validated = this.dataStore.getAll('validatedRoutes');
+            validated.forEach(route => {
+                if (Array.isArray(route.pedidoIndices) && route.pedidoIndices.includes(index)) {
+                    if (route.camion && route.camion.placa) {
+                        this.dataStore.setCamionDisponibilidad(route.camion.placa, true);
+                    }
+                    if (route.chofer && route.chofer.licencia) {
+                        this.dataStore.setChoferDisponibilidad(route.chofer.licencia, true);
+                    }
+                }
+            });
+
+            // Update UI
+            this.uiManager.updateTable('pedidos', null, this.handleDelete.bind(this), this.handleMarkAsDispatched.bind(this), this.handleMarkAsDelivered.bind(this));
+            this.uiManager.updateTable('camiones', this.handleInlineSave.bind(this), this.handleDelete.bind(this));
+            this.uiManager.updateTable('choferes', this.handleInlineSave.bind(this), this.handleDelete.bind(this));
+            this.uiManager.updateDashboard();
+            this.updateRouteRelatedUI();
+
+            this.uiManager.showNotification('Pedido marcado como "Entregado". Camión y chofer ahora disponibles.', false);
+        } catch (error) {
+            console.error(error);
+            this.uiManager.showNotification(`Error al marcar pedido como entregado: ${error.message}`, true);
+        }
+    }
+
     updateRouteRelatedUI() {
         const camiones = this.dataStore.getAll('camiones');
+        const choferes = this.dataStore.getAll('choferes');
         // Filter for only 'Pendiente' orders
         const pendingPedidos = this.dataStore.getAll('pedidos').filter(p => p.estado === 'Pendiente' || p.estado === 'En Proceso');
-        this.uiManager.updateSelectors(camiones, pendingPedidos);
+        this.uiManager.updateSelectors(camiones, pendingPedidos, choferes);
     }
 
     updateFuelInput() {
@@ -256,11 +345,17 @@ class App {
             const combustibleNecesarioRaw = this.currentRoute.distanciaTotal / parseFloat(this.currentRoute.camion.kmPorGalon);
             this.currentRoute.combustibleNecesario = Math.ceil(combustibleNecesarioRaw * 1.10); // Store adjusted value
 
+            // Attach selected chofer to the route for display and validation traceability
+            const selectedChoferLicence = document.getElementById('selectChofer').value;
+            const choferObj = this.dataStore.getAll('choferes').find(ch => ch.licencia === selectedChoferLicence) || null;
+            this.currentRoute.chofer = choferObj;
+
             this.uiManager.displaySingleRouteInfo(
                 this.currentRoute,
                 this.dataStore.getAll('camiones'),
                 pedidos, // pass array of pedidos for UI
-                cantidadCombustible
+                cantidadCombustible,
+                choferObj // pass selected chofer to UI
             );
             
             document.getElementById('rutaCalculada').style.display = 'block';
@@ -341,6 +436,10 @@ class App {
                 this.currentRoute.status = 'Validada';
                 // Ensure route stores involved pedido indices for traceability
                 this.currentRoute.pedidoIndices = pedidoIndices;
+                // Store fecha sugerida de despacho if provided
+                const fechaSugerida = document.getElementById('fechaSugeridaDespacho') ? document.getElementById('fechaSugeridaDespacho').value : null;
+                if (fechaSugerida) this.currentRoute.fechaSugeridaDespacho = fechaSugerida;
+
                 this.dataStore.addValidatedRoute(this.currentRoute);
                 
                 // Mark all involved pedidos as 'En Proceso'
@@ -350,8 +449,16 @@ class App {
                     }
                 });
 
+                // Mark assigned camion and chofer as no disponibles until pedidos are 'Entregados'
+                if (this.currentRoute.camion && this.currentRoute.camion.placa) {
+                    this.dataStore.setCamionDisponibilidad(this.currentRoute.camion.placa, false);
+                }
+                if (this.currentRoute.chofer && this.currentRoute.chofer.licencia) {
+                    this.dataStore.setChoferDisponibilidad(this.currentRoute.chofer.licencia, false);
+                }
+
                 // Refresh pedidos table with proper callbacks
-                this.uiManager.updateTable('pedidos', null, this.handleDelete.bind(this), this.handleMarkAsDispatched.bind(this));
+                this.uiManager.updateTable('pedidos', null, this.handleDelete.bind(this), this.handleMarkAsDispatched.bind(this), this.handleMarkAsDelivered.bind(this));
 
                 this.currentRoute = null;
                 this.uiManager.clearRouteDetails();
@@ -360,7 +467,7 @@ class App {
                 this.uiManager.updateValidatedRoutesList(this.handleDelete.bind(this));
                 this.uiManager.updateDashboard();
                 this.updateRouteRelatedUI();
-                this.uiManager.showNotification('Ruta validada exitosamente y pedidos marcados como "En Proceso".', false);
+                this.uiManager.showNotification('Ruta validada exitosamente y pedidos marcados como "En Proceso". Camión y chofer quedan reservados hasta la entrega.', false);
             };
 
             if (warnings.length > 0) {
@@ -432,8 +539,8 @@ class App {
                 this.uiManager.updateTable('camiones', this.handleInlineSave.bind(this), this.handleDelete.bind(this));
                 this.uiManager.updateTable('sucursales', this.handleInlineSave.bind(this), this.handleDelete.bind(this));
                 this.uiManager.updateTable('choferes', this.handleInlineSave.bind(this), this.handleDelete.bind(this));
-                // Ensure correct callbacks for pedidos table after upload
-                this.uiManager.updateTable('pedidos', null, this.handleDelete.bind(this), this.handleMarkAsDispatched.bind(this));
+                // Ensure correct callbacks for pedidos table after upload (bind both dispatch and deliver)
+                this.uiManager.updateTable('pedidos', null, this.handleDelete.bind(this), this.handleMarkAsDispatched.bind(this), this.handleMarkAsDelivered.bind(this));
                 this.uiManager.updateValidatedRoutesList(this.handleDelete.bind(this));
                 this.uiManager.updateDashboard();
                 this.updateRouteRelatedUI();

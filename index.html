@@ -257,6 +257,19 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- New stat card for Delivered Orders -->
+                <div class="col-md-4">
+                    <div class="stat-card">
+                        <div class="stat-icon">
+                            <i class="fas fa-check-double"></i>
+                        </div>
+                        <div class="stat-content">
+                            <h3 id="totalPedidosEntregados">0</h3>
+                            <p>Pedidos Entregados</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
 
@@ -473,8 +486,9 @@
         <div id="rutas" class="section" style="display:none;">
             <h2>Gestión de Rutas</h2>
             <form id="rutaForm" class="mb-4">
-                <div class="row">
-                    <div class="col-md-3">
+                <div class="row g-3">
+                    <!-- First row: Pedidos amplio + Camión + Chofer -->
+                    <div class="col-md-6">
                         <div class="mb-3">
                             <label class="form-label">Pedidos a Despachar (puede seleccionar varios)</label>
                             <select class="form-control" id="selectPedidoRuta" multiple size="4" required>
@@ -492,13 +506,29 @@
                     </div>
                     <div class="col-md-3">
                         <div class="mb-3">
+                            <label class="form-label">Chofer</label>
+                            <select class="form-control" id="selectChofer" required>
+                                <option value="">Seleccione un chofer</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Second row: Fecha sugerida + Cantidad Combustible + Acción -->
+                    <div class="col-md-4">
+                        <div class="mb-3">
+                            <label class="form-label">Fecha sugerida de despacho</label>
+                            <input type="date" class="form-control" id="fechaSugeridaDespacho" name="fechaSugeridaDespacho">
+                        </div>
+                    </div>
+                    <div class="col-md-4">
+                        <div class="mb-3">
                             <label class="form-label">Cantidad Combustible (gal)</label>
                             <input type="number" class="form-control" id="cantidadCombustible" min="0" step="0.1" required>
                         </div>
                     </div>
-                    <div class="col-md-3">
-                        <div class="mb-3">
-                            <button type="submit" class="btn btn-primary mt-4">Calcular Ruta</button>
+                    <div class="col-md-4 d-flex align-items-end justify-content-end">
+                        <div class="mb-3 w-100 text-end">
+                            <button type="submit" class="btn btn-primary">Calcular Ruta</button>
                         </div>
                     </div>
                 </div>
