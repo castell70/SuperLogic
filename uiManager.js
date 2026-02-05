@@ -455,6 +455,15 @@ export class UIManager {
         // Chofer info block
         const choferHtml = chofer ? `<p><strong>Chofer Asignado:</strong> ${chofer.nombre} — Salario: $${parseFloat(chofer.salario || 0).toFixed(2)}</p>` : '';
 
+        // Check if the provided fuel exceeds the needed fuel by 3 or more gallons
+        let excesoMensajeHtml = '';
+        if (typeof combustibleNecesario === 'number' && typeof combustibleDisponible === 'number') {
+            const diferencia = combustibleDisponible - combustibleNecesario;
+            if (diferencia >= 3) {
+                excesoMensajeHtml = `<p class="text-info"><i class="fas fa-info-circle"></i> Nota: La cantidad de combustible ingresada excede lo esperado por ${diferencia.toFixed(0)} galones.</p>`;
+            }
+        }
+
         container.innerHTML = `
             <div class="route-details">
                 <div class="row">
@@ -469,6 +478,7 @@ export class UIManager {
                     <div class="col-md-6">
                         <p><strong>Combustible Disponible:</strong> ${combustibleDisponible.toFixed(2)} gal</p>
                         <p><strong>Combustible Necesario:</strong> ${combustibleNecesario.toFixed(0)} gal</p>
+                        ${excesoMensajeHtml}
                         <p><strong>Costo de Combustible:</strong> $${costoCombustibleVal.toFixed(2)}</p>
                         <p><strong>Costo Flete Operativo:</strong> $${costoFleteOperativoVal.toFixed(2)}</p>
                         <p><strong>Total Flete:</strong> $${costoTotalVal.toFixed(2)} ${breakdownPopup}</p>

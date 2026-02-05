@@ -91,99 +91,28 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <h4>Bienvenido a SuperLogic: Su Plataforma de Optimización Logística</h4>
-                    <p>SuperLogic es un sistema integral diseñado para revolucionar la gestión de su flota de camiones y la optimización de rutas. Nuestra plataforma le permite administrar sus activos, calcular rutas eficientes y tomar decisiones estratégicas basadas en datos en tiempo real, garantizando entregas oportunas y una reducción significativa de costos operativos.</p>
+                    <h4>Bienvenido a SuperLogic: Su Plataforma de Optimización Logística (Actualizada)</h4>
+                    <p>SuperLogic centraliza la gestión de su flota, personal y pedidos, y ahora incluye nuevas funciones para asignaciones más seguras y cálculos de costo más transparentes.</p>
 
-                    <h5 class="mt-4">Explorando las Funcionalidades Clave (actualizadas)</h5>
-                    <ol>
-                        <li><strong>Dashboard: Visión General Estratégica</strong>
-                            <ul>
-                                <li>Obtenga una vista rápida de los indicadores clave de su operación: número total de camiones, sucursales, choferes y rutas validadas.</li>
-                                <li>El dashboard se actualiza automáticamente con cada cambio en el sistema.</li>
-                            </ul>
-                        </li>
-                        <li><strong>Gestión de Camiones: Su Flota al Detalle</strong>
-                            <p>Registre y administre la información esencial de cada uno de sus camiones:</p>
-                            <ul>
-                                <li><strong>Placa, Marca, Año de Compra:</strong> Datos de identificación.</li>
-                                <li><strong>Capacidad (Ton):</strong> Carga máxima que el camión puede transportar.</li>
-                                <li><strong>Capacidad Tanque (gal):</strong> Capacidad total del tanque de combustible del vehículo en galones.</li>
-                                <li><strong>Costo Combustible ($/gal):</strong> Precio actual del galón de combustible para este camión, crucial para cálculos de costos.</li>
-                                <li><strong>KM/Galón:</strong> Rendimiento de combustible del camión, que indica cuántos kilómetros recorre por cada galón. Este es un factor clave para la precisión en el cálculo de rutas y costos.</li>
-                            </ul>
-                            <p>Se ha unificado el diseño de los botones en la gestión de camiones: "Registrar Camión" y "Generar Reporte" comparten tamaño y estilo pero con colores distintos para facilitar su identificación.</p>
-                        </li>
-                        <li><strong>Gestión de Sucursales: Puntos Estratégicos de Distribución</strong>
-                            <p>Administre sus puntos de entrega y recolección:</p>
-                            <ul>
-                                <li><strong>Nombre:</strong> Identificación de la sucursal.</li>
-                                <li><strong>Latitud / Longitud:</strong> Coordenadas geográficas exactas para cálculos de ruta precisos.</li>
-                                <li><strong>Demanda (Ton):</strong> Cantidad de carga, en toneladas, que la sucursal requiere o puede manejar.</li>
-                            </ul>
-                            <p>Mantenga sus sucursales actualizadas para asegurar la planificación de rutas más eficiente.</p>
-                        </li>
-                        <li><strong>Gestión de Choferes: Su Equipo de Trabajo</strong>
-                            <p>Mantenga un registro de sus conductores autorizados con su información de contacto y licencia. Esta sección es fundamental para la asignación de personal a las rutas.</p>
-                        </li>
-                        <li><strong>Gestión de Pedidos: Registre y Organice Sus Despachos</strong>
-                            <p>Cree y gestione los pedidos de transporte que necesitan ser despachados. Cada pedido se asocia a una sucursal, especificando la cantidad de carga a transportar y la fecha de envío.</p>
-                            <ul>
-                                <li><strong>Sucursal:</strong> La sucursal de destino del pedido.</li>
-                                <li><strong>Cantidad (Ton):</strong> La cantidad de carga en toneladas que debe ser transportada.</li>
-                                <li><strong>Fecha de Envío:</strong> La fecha programada para el despacho.</li>
-                            </ul>
-                            <p>Los pedidos registrados aparecerán como 'Pendientes' y solo los pedidos en este estado podrán ser seleccionados para una nueva ruta en la sección de 'Rutas'. Una vez un pedido ha sido asociado y validado con una ruta, su estado cambiará a 'En Proceso'. Una vez el pedido ha sido entregado, puede marcarlo como 'Despachado' desde la tabla de Pedidos, y ya no aparecerá como opción para generar rutas ni en el dashboard como pendiente.</p>
-                        </li>
-                        <li><strong>Gestión de Rutas: Inteligencia Logística Avanzada</strong>
-                            <p>Esta es la funcionalidad central para la optimización de sus entregas:</p>
-                            <ul>
-                                <li><strong>Cálculo de Rutas Consolidadas (múltiples pedidos):</strong>
-                                    <ul>
-                                        <li>Ahora puede seleccionar múltiples pedidos pendientes para consolidar carga en un solo camión y reducir costos de flete.</li>
-                                        <li>El sistema evita que la suma de pedidos supere la capacidad en toneladas del camión seleccionado; si la suma excede la capacidad, deberá ajustar selección o camión.</li>
-                                        <li>El cálculo usa una ruta multidestino que estima distancia real por carretera (OSRM), consumo, costo de combustible y tiempo estimado.</li>
-                                    </ul>
-                                </li>
-                                <li><strong>Cálculo de Ruta Individual por Pedido (mejorado):</strong>
-                                    <ul>
-                                        <li>Seleccione uno o varios pedidos pendientes, elija el camión y especifique el combustible disponible; el sistema propondrá combustible necesario con 10% adicional.</li>
-                                        <li>Se sugiere automáticamente el camión más eficiente para el conjunto de pedidos, considerando capacidad, rendimiento y costo operativo.</li>
-                                        <li>Si el combustible o la capacidad son insuficientes se mostrará una advertencia en cuadros de texto; aún puede validar la ruta bajo su criterio tras confirmar la advertencia.</li>
-                                        <li>Al validar, los pedidos incluidos se marcarán como 'En Proceso' y la ruta quedará registrada en 'Rutas Validadas'.</li>
-                                    </ul>
-                                </li>
-                                <li><strong>Cálculo de Rutas Óptimas:</strong>
-                                    <ul>
-                                        <li>Haga clic en "Calcular Todas las Rutas" para que el sistema proponga una asignación eficiente de sucursales a sus camiones disponibles, buscando optimizar la carga y el uso de la flota.</li>
-                                        <li>Esta funcionalidad es ideal para una planificación a gran escala.</li>
-                                    </ul>
-                                </li>
-                                <li><strong>Validación de Rutas:</strong>
-                                    <ul>
-                                        <li>La validación ahora realiza comprobaciones adicionales (combustible, capacidad total) y muestra advertencias en cuadros de texto; puede confirmar y validar pese a advertencias usando la ventana de confirmación que resume las advertencias.</li>
-                                        <li>Una vez validada, la ruta se registra y los pedidos pasan a 'En Proceso'.</li>
-                                    </ul>
-                                </li>
-                                <li><strong>Rutas Validadas:</strong>
-                                    <ul>
-                                        <li>Consulte el historial de todas las rutas validadas y elimínelas si es necesario.</li>
-                                    </ul>
-                                </li>
-                            </ul>
-                        </li>
-                        <li><strong>Herramientas de Datos: Gestión Segura de su Información</strong>
-                            <ul>
-                                <li><strong>Descargar Datos (JSON):</strong> Genere un archivo JSON con toda la información registrada en el sistema (camiones, sucursales, choferes, rutas validadas, pedidos). Ideal para copias de seguridad o migración de datos.</li>
-                                <li><strong>Cargar Datos desde JSON:</strong> Importe un archivo JSON para restaurar o actualizar la información del sistema. Tenga en cuenta que esta acción reemplazará los datos actuales.</li>
-                                <li><strong>Reiniciar Aplicación:</strong> Opción disponible en Herramientas para limpiar completamente la aplicación y comenzar desde cero; al usarla verá una ventana de advertencia que explica que la acción eliminará permanentemente todos los registros.</li>
-                            </ul>
-                        </li>
-                    </ol>
+                    <h5 class="mt-3">Puntos clave añadidos recientemente</h5>
+                    <ul>
+                        <li><strong>Selección de Chofer en Gestión de Rutas:</strong> Al crear una ruta puede elegir el chofer desde una lista que muestra su nombre y salario, para facilitar decisiones y cálculos.</li>
+                        <li><strong>Total Flete y Otros Costos:</strong> El Total Flete aparece junto a su descripción en el detalle de ruta; además ahora se incluye en "Otros Costos" el 10% del salario del chofer seleccionado para reflejar costos operativos de personal.</li>
+                        <li><strong>Fecha sugerida de despacho:</strong> Al calcular una ruta puede indicar una fecha sugerida; dicha fecha se guarda en la ruta validada para programación y trazabilidad.</li>
+                        <li><strong>Bloqueo de Camión y Chofer:</strong> Cuando valida una ruta, el camión y el chofer asignados quedan reservados (no disponibles) hasta que los pedidos vinculados se marquen como <em>Entregado</em>, momento en que se liberan automáticamente.</li>
+                        <li><strong>Pedidos entregados en Dashboard:</strong> El Dashboard ahora cuenta los pedidos en estado <em>Entregado</em> para seguimiento rápido.</li>
+                        <li><strong>Rutas consolidadas y sincronización de estados:</strong> Si una ruta validada contiene varios pedidos, al marcar la ruta como <em>Despachada</em> todos los pedidos de la ruta pasan a <em>Despachado</em>. Si elimina una ruta validada, los pedidos vuelven a estado <em>Pendiente</em> y el camión/chofer se liberan.</li>
+                        <li><strong>Advertencias y confirmaciones:</strong> Antes de validar la ruta el sistema realiza comprobaciones de capacidad y combustible; si existen advertencias se muestran en un modal de confirmación que permite validar pese a ellas tras su aceptación.</li>
+                        <li><strong>Cálculo de combustible con margen:</strong> El sistema calcula el combustible necesario según la distancia real (OSRM) y añade un 10% de seguridad; si la cantidad ingresada excede lo necesario por 3 galones o más, se muestra una nota informativa en el detalle de ruta.</li>
+                        <li><strong>Ruteo real por carretera (OSRM):</strong> Las distancias y geometrías se obtienen de OSRM para estimaciones precisas de distancia y tiempo; en caso de errores de conexión se mostrará una notificación.</li>
+                        <li><strong>Rutas óptimas:</strong> La opción "Calcular Todas las Rutas" propone asignaciones automáticas de sucursales a camiones disponibles según capacidad y alcance, facilitando la planificación a gran escala.</li>
+                        <li><strong>Exportar/Importar y Reiniciar:</strong> Mantenga copias de seguridad en JSON, recupere datos o reinicie la aplicación desde Herramientas; tenga en cuenta que importar reemplaza los datos actuales y reiniciar los borra permanentemente.</li>
+                    </ul>
 
-                    <div class="alert alert-info">
-                        <strong>Nota Importante:</strong> SuperLogic utiliza un motor de ruteo avanzado (OSRM) para calcular las distancias reales por carretera, lo que garantiza una precisión inigualable en sus estimaciones de tiempo y costo. Los cálculos de combustible y flete se basan en los datos de rendimiento específicos de cada camión y un costo operativo por kilómetro, proporcionándole una visión financiera completa de cada ruta. Todas las advertencias, errores y mensajes de verificación se muestran dentro de cuadros de texto o modales para una lectura clara y accesible.
+                    <div class="alert alert-info mt-3">
+                        <strong>Nota Técnica:</strong> Los cálculos combinan rendimiento por camión (km/gal), costo por km operativo y rutas reales obtenidas por OSRM para dar un desglose transparente de Costo Combustible, Costo Flete Operativo y Otros Costos (incluye 10% del salario del chofer cuando aplica). Todas las advertencias, errores y peticiones de confirmación aparecen en cuadros de texto o modales para evitar acciones accidentales.
                     </div>
-                    
+
                     <div class="help-footer text-center mt-4 pt-3 border-top">
                         <small class="text-muted">© 2025 Carlos Alfredo Castillo Flores - ITCPO</small>
                     </div>
